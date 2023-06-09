@@ -1,15 +1,9 @@
 from pathlib import Path
-import albumentations as A
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torchvision.transforms
 import yaml
-from functools import lru_cache
-
-normalize = torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-denormalize = torchvision.transforms.Normalize(mean=[-0.485/0.229, -0.456/0.224, -0.406/0.255], std=[1/0.229, 1/0.224, 1/0.255])
 
 class FasterRCNNDataset(torch.utils.data.Dataset):
 
