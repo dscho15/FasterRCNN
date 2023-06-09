@@ -9,8 +9,6 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
 
     BBOX_AREA_THRESHOLD = 4
 
-    show = False
-
     def __init__(self,
                  scenes: list[Path],
                  transform: dict = None,
