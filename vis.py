@@ -1,24 +1,30 @@
 import torch
-from dataset import FasterRCNNDataset
+from core.pldatamodule import FasterRCNNDataModule
 from pathlib import Path
-from utils import load_config
-from utils import load_augmentations
+from core.utils import load_config
+from core.utils import load_augmentations
 
 if __name__ == "__main__":
 
     # Path to data
-    p_to_data = Path("/home/dts/Desktop/master_thesis/FasterRCNN/cfg/mvdd_params.yaml")
+    path_to_yaml = Path("/home/dts/Desktop/master_thesis/FasterRCNN/cfg/mvdd_params.yaml")
 
-    if not p_to_data.exists():
+    if not path_to_yaml.exists():
         raise Exception("Path to data does not exist")
-    
-    cfg = load_config(p_to_data)
-
-    # load training scenes
-    train_scenes = cfg["train_scenes"]
-    
-    scenes = [Path(cfg["train_path"]) / scene for scene in train_scenes]
 
     train_aug, test_aug = load_augmentations()
+
+    data_module = FasterRCNNDataModule(path_to_yaml=path_to_yaml, 
+                                       train_transform=train_aug, 
+                                       test_transform=test_aug)
     
-    dataset = FasterRCNNDataset(scenes=scenes, transform=train_aug, infer=False)
+    data_module.prepare_data()
+
+    train_dataloader = data_module.train_dataloader()
+
+    for idx, (images, targets) in enumerate(train_dataloader):
+        
+        images = list(image for image in images)
+        targets = [{k: v for k, v in t.items()} for t in targets]
+
+        break

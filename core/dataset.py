@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import yaml
+from distinctipy import distinctipy
 
 class FasterRCNNDataset(torch.utils.data.Dataset):
 
@@ -19,7 +20,7 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
         self.scene_paths = scenes
         self.infer = infer
         self.format = format
-        self.show = True
+        self.show = False
         
         self.obj_ids = obj_ids
         self.obj_id_mappings = {str(obj_id): idx for idx, obj_id in enumerate(obj_ids)}
@@ -65,16 +66,12 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
         image, bboxes = transformed['image'], transformed['bboxes']
 
         if self.show:
-            for bbox in bboxes:
+            colors = distinctipy.get_colors(len(self.obj_ids))
+            for i, bbox in enumerate(bboxes):
                 x, y, w, h, label = bbox
                 x, y, w, h = int(x), int(y), int(w), int(h)
-                if label == 0:
-                    color = (255, 0, 0)
-                elif label == 1:
-                    color = (0, 255, 0)
-                else:
-                    color = (0, 0, 255)
-                cv2.rectangle(image, (x, y), (x+w, y+h), color, 2)
+                r, g, b = [int(c * 255) for c in colors[label]]
+                cv2.rectangle(image, (x, y), (x+w, y+h), (r, g, b), 2)
             plt.imshow(image)
             plt.show()
 
@@ -86,14 +83,18 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
             x1, y1, x2, y2 = x, y, x + w, y + h
             x1, y1, x2, y2 = x1 / image.shape[1], y1 / image.shape[0], x2 / image.shape[1], y2 / image.shape[0]
             boxes.append([x1, y1, x2, y2])
+            labels.append(obj_id)
 
         target = {}
         target["boxes"] = torch.Tensor(boxes).float()
         target["labels"] = torch.Tensor(labels).long()
 
+        image = torch.Tensor(image).permute(2, 0, 1).float()
+
         return image, target
 
     def __len__(self):        
+        
         return len(self.scene_dict)
     
     def __load_scenes_into_dict(self):
