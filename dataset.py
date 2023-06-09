@@ -13,8 +13,7 @@ denormalize = torchvision.transforms.Normalize(mean=[-0.485/0.229, -0.456/0.224,
 
 class FasterRCNNDataset(torch.utils.data.Dataset):
 
-    BBOX_AREA_THRESHOLD = 10
-    MINIMUM_MASK_SIZE = 2
+    BBOX_AREA_THRESHOLD = 4
 
     show = False
 
