@@ -1,5 +1,7 @@
 import yaml
 import albumentations as A
+import cv2
+from distinctipy import distinctipy
 from augmentations.debayering import DebayerArtefacts
 from augmentations.unsharp_mask import Unsharpen
 
@@ -17,7 +19,7 @@ def load_augmentations(resize=(1080, 1080)):
                                 A.ISONoise(p=0.5),
                                 A.GaussNoise(p=0.5),
                                 A.CLAHE(p=0.5),
-                                A.ColorJitter(p=0.5, brightness=0.25, contrast=0.25, saturation=0.25, hue=0.25),
+                                A.ColorJitter(p=0.5),
                                 A.HorizontalFlip(p=0.5),
                                 A.VerticalFlip(p=0.5),
                                 DebayerArtefacts(p=0.5),
@@ -37,3 +39,26 @@ def load_augmentations(resize=(1080, 1080)):
                                                      label_fields=["labels"]))
 
     return train_album, test_album
+
+def draw_boxes(image_, boxes, labels, scores):
+
+    distinctipy_colors = distinctipy.get_colors(3)
+
+    image = image_.detach().cpu().numpy().transpose(1, 2, 0)
+
+    for box, label, score in zip(boxes, labels, scores):
+
+        if score < 0.7:
+            continue
+
+        x1, y1, x2, y2 = box
+
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+        r, g, b = [int(c * 255) for c in distinctipy_colors[label-1]]
+        
+        image = cv2.rectangle(image, (x1, y1), (x2, y2), (r, g, b), 2)
+    
+    image = image.astype('uint8')
+
+    return image

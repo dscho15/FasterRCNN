@@ -15,16 +15,12 @@ from torchvision.ops.feature_pyramid_network import LastLevelMaxPool
 class FasterRCNNLightning(pl.LightningModule):
 
     def __init__(self, 
-                 model_path: str = None, 
                  num_classes=3):
         
         super().__init__()
 
 
         self.model = self.__faster_rcnn_model(num_classes)
-
-        if model_path is not None:
-            self.model.load_state_dict(torch.load(model_path))
 
     def forward(self, x):
 
@@ -73,7 +69,6 @@ class FasterRCNNLightning(pl.LightningModule):
         
             loss_dict = self.model(images, targets)
 
-            print(loss_dict)
             losses = sum(loss for loss in loss_dict.values())
         
             self.log('val_loss', losses)
@@ -85,9 +80,9 @@ class FasterRCNNLightning(pl.LightningModule):
         
         params = [p for p in self.model.parameters() if p.requires_grad]
         optimizer = torch.optim.AdamW(params, lr=1e-4, weight_decay=1e-2)
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
+        # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
-        return [optimizer], [lr_scheduler]
+        return optimizer #], [lr_scheduler]
     
     def __faster_rcnn_model(self, n_classes):
         
@@ -100,20 +95,21 @@ class FasterRCNNLightning(pl.LightningModule):
 
         roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0', '1', '2', '3'], output_size=7, sampling_ratio=2)
 
-        box_head = FastRCNNConvFCHead((backbone.out_channels, 7, 7), [128, 128, 128, 128], [256], norm_layer=nn.BatchNorm2d)
+        box_head = FastRCNNConvFCHead((backbone.out_channels, 7, 7), [128, 128, 128, 128], [512], norm_layer=nn.BatchNorm2d)
 
         model = FasterRCNN(
             backbone,
-            num_classes=n_classes,
+            num_classes=n_classes+1,
             rpn_anchor_generator=rpn_anchor_generator,
             rpn_head=rpn_head,
             box_head=box_head,
             box_roi_pool=roi_pooler,
             min_size=2**8,
-            max_size=2**10
+            max_size=2**11,
+            bbox_reg_weights=None,
         )
 
-        # model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(num_classes=n_classes, pretrained_backbone=True, trainable_backbone_layers=1, min_size=2**8, max_size=2**10)
+        # model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(num_classes=n_classes+1, pretrained_backbone=True, trainable_backbone_layers=2, min_size=2**8, max_size=2**10)
 
         return model
     
@@ -152,7 +148,7 @@ class FasterRCNNLightning(pl.LightningModule):
 
         in_channels_stage2 = backbone.inplanes // 8
         in_channels_list = [in_channels_stage2 * 2 ** (i - 1) for i in returned_layers]
-        out_channels = 128
+        out_channels = 256
 
         return BackboneWithFPN(
             backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks, norm_layer=norm_layer

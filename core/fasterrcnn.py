@@ -228,7 +228,7 @@ class FasterRCNN(GeneralizedRCNN):
             box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
 
         if box_predictor is None:
-            representation_size = 256
+            representation_size = 512
             box_predictor = FastRCNNPredictor(representation_size, num_classes)
 
         roi_heads = RoIHeads(
@@ -248,8 +248,10 @@ class FasterRCNN(GeneralizedRCNN):
 
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
+        
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
+
         transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std, **kwargs)
 
         super().__init__(backbone, rpn, roi_heads, transform)

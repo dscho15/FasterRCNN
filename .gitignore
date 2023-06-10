@@ -3,8 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *mvdd_params.yaml*
-*my_model*
-*.ckpt*
+my_model
 
 # C extensions
 *.so

@@ -23,7 +23,6 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
         self.show = False
         
         self.obj_ids = obj_ids
-        self.obj_id_mappings = {str(obj_id): idx for idx, obj_id in enumerate(obj_ids)}
         
         self.scene_dict = self.__load_scenes_into_dict()
         
@@ -32,9 +31,9 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
     def extract_obj_id(self, obj_id, id_convention):
         
         if id_convention == 'object_poses':
-            return self.obj_id_mappings[str(obj_id["obj_id"])]
+            return int(obj_id["obj_id"])
         elif id_convention == 'object_ids':
-            return self.obj_id_mappings[str(obj_id)]
+            return int(obj_id)
         else:
             raise ValueError("id_convention must be either 'object_poses' or 'object_ids'.")
     
@@ -42,13 +41,11 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
 
         # Find all relevant file_paths (images, masks, yaml files)
         image_path = self.scene_dict[index]["images_path"]
-        # mask_path  = self.scene_dict[index]["masks_path"]
         yaml_file  = self.scene_dict[index]["yaml_files"]
 
         # Load corresponding images, masks and camera configs
         image  = cv2.imread(str(image_path))
         image  = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        # mask   = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
 
         # Load scene data from yaml files
         d = self.__extract_yaml_info(yaml_file)
@@ -70,7 +67,7 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
             for i, bbox in enumerate(bboxes):
                 x, y, w, h, label = bbox
                 x, y, w, h = int(x), int(y), int(w), int(h)
-                r, g, b = [int(c * 255) for c in colors[label]]
+                r, g, b = [int(c * 255) for c in colors[label-1]]
                 cv2.rectangle(image, (x, y), (x+w, y+h), (r, g, b), 2)
             plt.imshow(image)
             plt.show()
@@ -81,7 +78,6 @@ class FasterRCNNDataset(torch.utils.data.Dataset):
         for bbox in bboxes:
             x, y, w, h, obj_id = bbox
             x1, y1, x2, y2 = x, y, x + w, y + h
-            x1, y1, x2, y2 = x1 / image.shape[1], y1 / image.shape[0], x2 / image.shape[1], y2 / image.shape[0]
             boxes.append([x1, y1, x2, y2])
             labels.append(obj_id)
 

@@ -8,11 +8,14 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 import pytorch_lightning as pl
 import torch
+import matplotlib.pyplot as plt
+
+from core.utils import draw_boxes
 
 if __name__ == "__main__":
 
     # Path to model
-    path_to_model = Path("/home/dts/Desktop/master_thesis/FasterRCNN/logs/my-model-epoch=00-val_loss=0.08.ckpt")
+    path_to_model = Path("/home/dts/Desktop/master_thesis/FasterRCNN/logs/my_model/0/my-model-epoch=04-val_loss=0.25.ckpt")
 
     # Path to data
     path_to_yaml = Path("/home/dts/Desktop/master_thesis/FasterRCNN/cfg/mvdd_params.yaml")
@@ -30,7 +33,8 @@ if __name__ == "__main__":
 
     test_dataloader = data_module.test_dataloader()
     
-    model = FasterRCNNLightning(str(path_to_model), num_classes=3)
+    model = FasterRCNNLightning(num_classes=3)
+    model = model.load_from_checkpoint(str(path_to_model))
 
     for idx, (images, targets) in enumerate(test_dataloader):
 
@@ -42,3 +46,8 @@ if __name__ == "__main__":
             targets = [{k: v for k, v in t.items()} for t in targets]
 
             outputs = model(images)
+
+            image = draw_boxes(images[0], outputs[0]['boxes'], outputs[0]['labels'], outputs[0]['scores'])
+
+        plt.imshow(image)
+        plt.show()

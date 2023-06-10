@@ -31,19 +31,24 @@ if __name__ == "__main__":
     model = FasterRCNNLightning(num_classes=3)
 
     # logger
-    tb_logger = TensorBoardLogger('logs/', name='my_model')
+    create_path = Path('logs/my_model/').mkdir(parents=True, exist_ok=True)
+
+    # check how many versions are already created in the logdir
+    version = len([dir for dir in Path('logs/my_model/').iterdir() if dir.is_dir()])
+
+    tb_logger = TensorBoardLogger('logs/', name='my_model', version=str(version))
 
     # log the best model
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         monitor='val_loss',
-        dirpath='logs/my_model/',
+        dirpath=f"logs/my_model/{version}/",
         filename='my-model-{epoch:02d}-{val_loss:.2f}',
         save_top_k=1,
         mode='min',
     )
 
     trainer = pl.Trainer(gpus=1,
-                         max_epochs=1,
+                         max_epochs=25,
                          gradient_clip_algorithm='norm',
                          val_check_interval=0.1,
                          gradient_clip_val=3,
